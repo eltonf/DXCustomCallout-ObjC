@@ -75,16 +75,7 @@
         self.createCalloutViewBlock = createCalloutViewBlock;
         
         [self addSubview:self.pinView];
-        [self addSubview:self.calloutView];
         self.frame = [self calculateFrame];
-        if (self.calloutView != nil) {
-            if (self.settings.shouldAddCalloutBorder) {
-                [self addCalloutBorder];
-            }
-            if (self.settings.shouldRoundifyCallout) {
-                [self roundifyCallout];
-            }
-        }
         [self positionSubviews];
     }
     return self;
@@ -114,6 +105,10 @@
 
 - (void)positionSubviews {
     self.pinView.center = self.center;
+    [self positionCalloutView];
+}
+
+- (void)positionCalloutView {
     if (self.calloutView != nil) {
         CGRect frame = self.calloutView.frame;
         frame.origin.y = -frame.size.height - self.settings.calloutOffset;
@@ -183,8 +178,8 @@
 - (void)showCalloutView {
     if (_calloutView == nil && self.createCalloutViewBlock != nil) {
         self.calloutView = self.createCalloutViewBlock();
+        self.calloutView.hidden = YES;
         [self addSubview:self.calloutView];
-        self.frame = [self calculateFrame];
         if (self.calloutView != nil) {
             if (self.settings.shouldAddCalloutBorder) {
                 [self addCalloutBorder];
@@ -193,7 +188,7 @@
                 [self roundifyCallout];
             }
         }
-        [self positionSubviews];
+        [self positionCalloutView];
     }
     
     if (self.calloutView != nil) {
