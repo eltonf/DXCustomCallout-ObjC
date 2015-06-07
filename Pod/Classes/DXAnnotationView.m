@@ -10,11 +10,10 @@
 #import "DXAnnotationSettings.h"
 
 @interface DXAnnotationView () {
-    BOOL _hasCalloutView;
+
 }
 
 @property(nonatomic, strong) UIView *pinView;
-@property(nonatomic, strong) UIView *calloutView;
 @property(nonatomic, strong) DXAnnotationSettings *settings;
 
 @end
@@ -33,7 +32,6 @@
     if (self) {
         self.clipsToBounds = NO;
         [self validateSettings:settings];
-        _hasCalloutView = (calloutView) ? YES : NO;
         self.canShowCallout = NO;
 
         self.pinView = pinView;
@@ -44,7 +42,7 @@
         [self addSubview:self.pinView];
         [self addSubview:self.calloutView];
         self.frame = [self calculateFrame];
-        if (_hasCalloutView) {
+        if (self.calloutView != nil) {
             if (self.settings.shouldAddCalloutBorder) {
                 [self addCalloutBorder];
             }
@@ -57,13 +55,66 @@
     return self;
 }
 
+- (instancetype)initWithAnnotation:(id<MKAnnotation>)annotation
+                   reuseIdentifier:(NSString *)reuseIdentifier
+                           pinView:(UIView *)pinView
+            createCalloutViewBlock:(CreateCalloutViewBlock)createCalloutViewBlock
+                          settings:(DXAnnotationSettings *)settings
+{
+    
+    NSAssert(pinView != nil, @"Pinview can not be nil");
+    self = [super initWithAnnotation:annotation
+                     reuseIdentifier:reuseIdentifier];
+    if (self) {
+        self.clipsToBounds = NO;
+        [self validateSettings:settings];
+        self.canShowCallout = NO;
+        
+        self.pinView = pinView;
+        self.pinView.userInteractionEnabled = YES;
+        self.createCalloutViewBlock = createCalloutViewBlock;
+        
+        [self addSubview:self.pinView];
+        [self addSubview:self.calloutView];
+        self.frame = [self calculateFrame];
+        if (self.calloutView != nil) {
+            if (self.settings.shouldAddCalloutBorder) {
+                [self addCalloutBorder];
+            }
+            if (self.settings.shouldRoundifyCallout) {
+                [self roundifyCallout];
+            }
+        }
+        [self positionSubviews];
+    }
+    return self;
+}
+
+- (void)setCreateCalloutViewBlock:(CreateCalloutViewBlock)createCalloutViewBlock
+{
+    _createCalloutViewBlock = createCalloutViewBlock;
+    
+    if (_createCalloutViewBlock != nil) {
+        _calloutView = nil;
+    }
+}
+
+- (void)setCalloutView:(UIView *)calloutView
+{
+    _calloutView = calloutView;
+    
+    if (_calloutView != nil) {
+        _createCalloutViewBlock = nil;
+    }
+}
+
 - (CGRect)calculateFrame {
     return self.pinView.bounds;
 }
 
 - (void)positionSubviews {
     self.pinView.center = self.center;
-    if (_hasCalloutView) {
+    if (self.calloutView != nil) {
         CGRect frame = self.calloutView.frame;
         frame.origin.y = -frame.size.height - self.settings.calloutOffset;
         frame.origin.x = (self.frame.size.width - frame.size.width) / 2.0;
@@ -81,7 +132,7 @@
 }
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
-    if (_hasCalloutView) {
+    if (self.calloutView != nil) {
         UITouch *touch = [touches anyObject];
         // toggle visibility
         if (touch.view == self.pinView) {
@@ -99,7 +150,7 @@
 }
 
 - (void)hideCalloutView {
-    if (_hasCalloutView) {
+    if (self.calloutView != nil) {
         if (!self.calloutView.isHidden) {
             switch (self.settings.animationType) {
             case DXCalloutAnimationNone: {
@@ -130,7 +181,22 @@
 }
 
 - (void)showCalloutView {
-    if (_hasCalloutView) {
+    if (_calloutView == nil && self.createCalloutViewBlock != nil) {
+        self.calloutView = self.createCalloutViewBlock();
+        [self addSubview:self.calloutView];
+        self.frame = [self calculateFrame];
+        if (self.calloutView != nil) {
+            if (self.settings.shouldAddCalloutBorder) {
+                [self addCalloutBorder];
+            }
+            if (self.settings.shouldRoundifyCallout) {
+                [self roundifyCallout];
+            }
+        }
+        [self positionSubviews];
+    }
+    
+    if (self.calloutView != nil) {
         if (self.calloutView.isHidden) {
             switch (self.settings.animationType) {
             case DXCalloutAnimationNone: {

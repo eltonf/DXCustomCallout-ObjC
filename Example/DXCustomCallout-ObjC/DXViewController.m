@@ -39,15 +39,24 @@
 
         UIView *pinView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"pin"]];
 
-        UIView *calloutView = [[[NSBundle mainBundle] loadNibNamed:@"myView" owner:self options:nil] firstObject];
+//        UIView *calloutView = [[[NSBundle mainBundle] loadNibNamed:@"myView" owner:self options:nil] firstObject];
 
         DXAnnotationView *annotationView = (DXAnnotationView *)[mapView dequeueReusableAnnotationViewWithIdentifier:NSStringFromClass([DXAnnotationView class])];
         if (!annotationView) {
+//            annotationView = [[DXAnnotationView alloc] initWithAnnotation:annotation
+//                                                          reuseIdentifier:NSStringFromClass([DXAnnotationView class])
+//                                                                  pinView:pinView
+//                                                              calloutView:calloutView
+//                                                                 settings:[DXAnnotationSettings defaultSettings]];
+            
+            
             annotationView = [[DXAnnotationView alloc] initWithAnnotation:annotation
                                                           reuseIdentifier:NSStringFromClass([DXAnnotationView class])
                                                                   pinView:pinView
-                                                              calloutView:calloutView
-                                                                 settings:[DXAnnotationSettings defaultSettings]];
+                              createCalloutViewBlock:^UIView *{
+                                  UIView *calloutView = [[[NSBundle mainBundle] loadNibNamed:@"myView" owner:self options:nil] firstObject];
+                                  return calloutView;
+                              } settings:[DXAnnotationSettings defaultSettings]];
         }
         return annotationView;
     }
